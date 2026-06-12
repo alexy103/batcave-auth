@@ -4,31 +4,36 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Batcave Security</title>
-		<link rel="stylesheet" href="css/output.css" />
+		<link rel="stylesheet" href="/css/output.css" />
 	</head>
 	<body class="p-8 space-y-8 bg-gray-900 text-white">
 		<h1 class="text-4xl">Connexion</h1>
-		<form id="register-form" class="flex flex-col gap-8 items-center">
+
+		<form id="register-form" method="POST" action="/auth/login" class="flex flex-col gap-8 items-center">
 			<div class="flex flex-col gap-2">
 				<label for="username" class="text-center">Nom d'utilisateur</label>
-				<input class="bg-gray-400 text-gray-900 focus:outline-none w-80 rounded px-2 py-1" type="text" id="username" placeholder="Nom d'utilisateur" required />
+				<input class="bg-gray-400 text-gray-900 focus:outline-none w-80 rounded px-2 py-1" type="text" id="username" name="username" placeholder="Nom d'utilisateur" required />
 			</div>
+
 			<div class="flex flex-col gap-2">
 				<label for="password" class="text-center">Mot de passe</label>
-				<input class="bg-gray-400 text-gray-900 focus:outline-none w-80 rounded px-2 py-1" type="password" id="password" placeholder="Mot de passe" required />
+				<input class="bg-gray-400 text-gray-900 focus:outline-none w-80 rounded px-2 py-1" type="password" id="password" name="password" placeholder="Mot de passe" required />
 			</div>
 
 			<select name="role" id="role" class="bg-gray-400 px-2 py-1 cursor-pointer text-black rounded">
 				<option value="USER">User</option>
 				<option value="ADMIN">Admin</option>
 			</select>
+
 			<div class="flex items-center gap-4">
 				<button type="submit" name="action" value="register" class="cursor-pointer bg-gray-400 text-gray-900 px-2 py-1 rounded">S'inscrire</button>
 				<button type="submit" name="action" value="login" class="cursor-pointer bg-yellow-400 text-gray-900 px-2 py-1 rounded">Connexion</button>
 			</div>
+
 			<p id="message" class="hidden"></p>
-			<a href="bat-computer" class="underline underline-offset-2">Accéder au Bat Computer</a>
+			<a href="/bat-computer" class="underline underline-offset-2">Accéder au Bat Computer</a>
 		</form>
-		<script src="js/register.js"></script>
+
+		<script src="/js/register.js"></script>
 	</body>
 </html>

@@ -75,3 +75,13 @@ document.getElementById('report-form').onsubmit = async (e) => {
 
 	report.value = '';
 };
+
+document.getElementById('logout-button').onclick = async () => {
+	const response = await fetch('/auth/logout', {
+		method: 'POST',
+	});
+
+	if (response.ok) {
+		window.location.href = '/';
+	}
+};

@@ -40,14 +40,13 @@ document.getElementById('register-form').onsubmit = async (e) => {
 	if (action === 'login') {
 		const response = await fetch('/auth/login', {
 			method: 'POST',
-			headers: {
-				Authorization: 'Basic ' + btoa(`${username}:${password}`),
-			},
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ username, password }),
 		});
 
-		if (response.ok) {
+		if (response.status === 200) {
 			const data = await response.json();
-			window.location.href = data.user.role === 'ADMIN' ? '/bat-computer' : '';
+			window.location.href = data.user.role === 'ADMIN' ? '/bat-computer' : '/';
 			return;
 		}
 
