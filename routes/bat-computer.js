@@ -8,6 +8,7 @@ const router = express.Router();
 const { checkAuth, adminOnly } = require('../middleware/security');
 const { writeAdminLog } = require('../middleware/logger');
 
+// BAT-COMPUTER ROUTES
 router.get('/', checkAuth, adminOnly, writeAdminLog, (req, res) => {
 	res.sendFile(path.resolve(__dirname, '../views/bat-computer.html'));
 });
@@ -24,6 +25,16 @@ router.post('/reports', checkAuth, adminOnly, (req, res) => {
 	const insert = db.prepare('INSERT INTO reports (user_id, content) VALUES (?, ?)');
 	insert.run(req.user.id, content);
 	res.status(201).send('Rapport envoyé !');
+});
+
+// BAT-LOGS ROUTES
+router.get('/logs', checkAuth, adminOnly, (req, res) => {
+	res.sendFile(path.resolve(__dirname, '../views/bat-logs.html'));
+});
+
+router.get('/api/logs', checkAuth, adminOnly, (req, res) => {
+	const logs = db.prepare('SELECT * FROM connexions_audit ORDER BY timestamp DESC').all();
+	res.json(logs);
 });
 
 module.exports = router;

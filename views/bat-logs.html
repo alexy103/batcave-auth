@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="/css/output.css" />
+		<title>BAT LOGS</title>
+	</head>
+	<body class="p-8 space-y-8 bg-gray-900 text-white">
+		<div class="flex items-center justify-between">
+			<h1 class="text-4xl font-bold text-yellow-400">BAT LOGS</h1>
+			<a href="/bat-computer" class="text-gray-900 py-1 px-2 rounded cursor-pointer bg-yellow-400 font-semibold">Retour</a>
+		</div>
+
+		<table class="w-full text-left border border-yellow-400">
+			<thead class="bg-yellow-400 text-gray-900">
+				<tr>
+					<th class="p-2 border border-yellow-400">ID</th>
+					<th class="p-2 border border-yellow-400">Username</th>
+					<th class="p-2 border border-yellow-400">Action</th>
+					<th class="p-2 border border-yellow-400">IP</th>
+					<th class="p-2 border border-yellow-400">User Agent</th>
+					<th class="p-2 border border-yellow-400">Timestamp</th>
+				</tr>
+			</thead>
+			<tbody id="logs-body"></tbody>
+		</table>
+
+		<script src="/js/bat-logs.js"></script>
+	</body>
+</html>
