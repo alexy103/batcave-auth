@@ -18,7 +18,7 @@ document.getElementById('register-form').onsubmit = async (e) => {
 	}
 
 	if (action === 'register') {
-		const response = await fetch('/register', {
+		const response = await fetch('/auth/register', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ username, password, role }),
@@ -38,7 +38,7 @@ document.getElementById('register-form').onsubmit = async (e) => {
 	}
 
 	if (action === 'login') {
-		const response = await fetch('/login', {
+		const response = await fetch('/auth/login', {
 			method: 'POST',
 			headers: {
 				Authorization: 'Basic ' + btoa(`${username}:${password}`),

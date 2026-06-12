@@ -1,5 +1,5 @@
 async function getCurrentUser() {
-	const response = await fetch('/api/me', {
+	const response = await fetch('/auth/me', {
 		method: 'GET',
 		headers: { 'Content-Type': 'application/json' },
 	});
@@ -12,7 +12,7 @@ async function getCurrentUser() {
 }
 
 async function getSecrets() {
-	const response = await fetch('/api/secrets', {
+	const response = await fetch('/bat-computer/secrets', {
 		method: 'GET',
 		headers: { 'Content-Type': 'application/json' },
 	});
@@ -67,7 +67,7 @@ document.getElementById('report-form').onsubmit = async (e) => {
 
 	if (!val || val.length < 1) return;
 
-	const response = await fetch('/api/reports', {
+	const response = await fetch('/bat-computer/reports', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ content: val }),

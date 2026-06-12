@@ -1,5 +1,7 @@
+const path = require('path');
 const Database = require('better-sqlite3');
-const db = new Database('database.db');
+
+const db = new Database(path.resolve(__dirname, 'database.db'));
 
 // Création de la table avec `username` UNIQUE
 db.prepare(
