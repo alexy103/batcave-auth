@@ -1,5 +1,7 @@
+const path = require('path');
 const Database = require('better-sqlite3');
-const db = new Database('database.db');
+
+const db = new Database(path.resolve(__dirname, 'database.db'));
 
 // Création de la table avec `username` UNIQUE
 db.prepare(
@@ -29,9 +31,23 @@ db.prepare(
 	`
   CREATE TABLE IF NOT EXISTS logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username INTEGER,
+    username TEXT,
     timestamp TIMESTAMP
   )
 `,
 ).run();
+
+db.prepare(
+	`
+  CREATE TABLE IF NOT EXISTS connexions_audit (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    action TEXT CHECK(action IN ('LOGIN', 'LOGOUT', 'FRAUD')),
+    ip_address TEXT,
+    user_agent TEXT,
+    timestamp TIMESTAMP
+  )
+`,
+).run();
+
 module.exports = db;
