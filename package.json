@@ -1,18 +1,21 @@
 {
-  "name": "batcave-security",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "better-sqlite3": "^12.10.0",
-    "express": "^5.2.1"
-  }
+	"name": "batcave-security",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "node --watch server.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"type": "commonjs",
+	"dependencies": {
+		"@tailwindcss/cli": "^4.3.0",
+		"bcrypt": "^6.0.0",
+		"better-sqlite3": "^12.10.0",
+		"express": "^5.2.1",
+		"tailwindcss": "^4.3.0"
+	}
 }

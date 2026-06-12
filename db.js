@@ -7,9 +7,31 @@ db.prepare(
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
-    password_hash TEXT
+    password_hash TEXT,
+    role TEXT DEFAULT 'user',
+    passwords_retry INTEGER
   )
 `,
 ).run();
 
+db.prepare(
+	`
+  CREATE TABLE IF NOT EXISTS reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    content TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`,
+).run();
+
+db.prepare(
+	`
+  CREATE TABLE IF NOT EXISTS logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username INTEGER,
+    timestamp TIMESTAMP
+  )
+`,
+).run();
 module.exports = db;

@@ -1,1 +1,32 @@
-<h1>BAT COMPUTER</h1>
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="css/output.css" />
+		<title>BAT COMPUTER</title>
+	</head>
+	<body class="p-8 space-y-8 bg-gray-900 text-white">
+		<div class="flex items-center justify-center gap-6">
+			<h1 class="text-center text-4xl font-bold text-yellow-400">BAT COMPUTER</h1>
+			<div class="size-20 bg-yellow-400 rounded-full px-2">
+				<img src="/batman-1.svg" class="size-full" alt="" />
+			</div>
+		</div>
+		<h2 id="welcome" class="text-2xl">Bienvenue, Justicier</h2>
+
+		<form id="report-form">
+			<p class="text-xl mb-2">Note de mission</p>
+			<textarea name="report" id="report" class="bg-gray-400 rounded focus:outline-none p-2 w-full mb-4 text-gray-900"></textarea>
+
+			<button type="submit" class="text-gray-900 mx-auto block py-1 px-2 rounded cursor-pointer bg-yellow-400 font-semibold">Envoyer la note</button>
+		</form>
+
+		<div>
+			<h2 class="text-xl mb-2">Secrets de la Batcave</h2>
+			<div id="secrets" class="grid grid-cols-2 gap-2"></div>
+		</div>
+
+		<script src="js/bat-computer.js"></script>
+	</body>
+</html>
