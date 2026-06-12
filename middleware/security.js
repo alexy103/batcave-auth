@@ -18,4 +18,16 @@ const adminOnly = (req, res, next) => {
 	next();
 };
 
-module.exports = { checkAuth, adminOnly };
+const checkSessionIntegrity = (req, res, next) => {
+	if (!req.session.user) return next();
+	if (req.session.ip !== req.ip || req.session.userAgent !== req.headers['user-agent']) {
+		return req.session.destroy(() => {
+			res.clearCookie('bat_identity');
+			return res.status(401).redirect('/');
+		});
+	} else {
+		next();
+	}
+};
+
+module.exports = { checkAuth, adminOnly, checkSessionIntegrity };

@@ -37,6 +37,9 @@ router.post('/login', async (req, res, next) => {
 			role: user.role,
 		};
 
+		req.session.ip = req.ip;
+		req.session.userAgent = req.headers['user-agent'];
+
 		req.session.save((err) => {
 			if (err) return next(err);
 
