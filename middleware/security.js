@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { writeConnexionAudit } = require('./logger');
 
 const checkAuth = async (req, res, next) => {
 	if (!req.session.user) return res.status(401).redirect('/');
@@ -21,6 +22,7 @@ const adminOnly = (req, res, next) => {
 const checkSessionIntegrity = (req, res, next) => {
 	if (!req.session.user) return next();
 	if (req.session.ip !== req.ip || req.session.userAgent !== req.headers['user-agent']) {
+		writeConnexionAudit(req, req.session.user.username, 'FRAUD');
 		return req.session.destroy(() => {
 			res.clearCookie('bat_identity');
 			return res.status(401).redirect('/');

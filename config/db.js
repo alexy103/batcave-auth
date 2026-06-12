@@ -31,9 +31,23 @@ db.prepare(
 	`
   CREATE TABLE IF NOT EXISTS logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username INTEGER,
+    username TEXT,
     timestamp TIMESTAMP
   )
 `,
 ).run();
+
+db.prepare(
+	`
+  CREATE TABLE IF NOT EXISTS connexions_audit (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    action TEXT CHECK(action IN ('LOGIN', 'LOGOUT', 'FRAUD')),
+    ip_address TEXT,
+    user_agent TEXT,
+    timestamp TIMESTAMP
+  )
+`,
+).run();
+
 module.exports = db;

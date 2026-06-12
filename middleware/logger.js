@@ -8,4 +8,10 @@ function writeAdminLog(req, res, next) {
 	next();
 }
 
-module.exports = { writeAdminLog };
+function writeConnexionAudit(req, username, action) {
+	const timestamp = new Date().toString();
+	const insert = db.prepare('INSERT INTO connexions_audit (username, action, ip_address, user_agent, timestamp) VALUES (?, ?, ?, ?, ?)');
+	insert.run(username, action, req.ip, req.headers['user-agent'], timestamp);
+}
+
+module.exports = { writeAdminLog, writeConnexionAudit };

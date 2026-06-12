@@ -5,6 +5,7 @@ const db = require('../config/db');
 const router = express.Router();
 
 const { checkAuth } = require('../middleware/security');
+const { writeConnexionAudit } = require('../middleware/logger');
 
 router.post('/register', async (req, res) => {
 	const { username, password, role } = req.body;
@@ -43,6 +44,8 @@ router.post('/login', async (req, res, next) => {
 		req.session.save((err) => {
 			if (err) return next(err);
 
+			writeConnexionAudit(req, username, 'LOGIN');
+
 			res.json({
 				message: 'Connecté !',
 				user: req.session.user,
@@ -51,11 +54,12 @@ router.post('/login', async (req, res, next) => {
 	});
 });
 
-router.post('/logout', (req, res) => {
+router.post('/logout', checkAuth, (req, res) => {
 	req.session.destroy((err) => {
 		if (err) {
 			return res.status(500).json({ message: 'Erreur lors de la déconnexion.' });
 		}
+		writeConnexionAudit(req, req.user.username, 'LOGOUT');
 		res.clearCookie('bat_identity');
 		res.json({ message: 'Déconnecté !' });
 	});
