@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 
 const app = express();
 app.use(express.json());
@@ -17,6 +18,7 @@ app.use(
 			sameSite: 'strict',
 			maxAge: 1_800_000,
 		},
+		store: new SQLiteStore({ db: 'sessions.db', dir: './config' }),
 	}),
 );
 
