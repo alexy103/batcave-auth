@@ -9,19 +9,21 @@ const getCookieValue = (cookieHeader, name) => {
 
 const checkRefreshToken = async (req, res, next) => {
 	if (!process.env.JWT_SECRET) {
-		return res.status(500).send('Configuration serveur invalide: JWT_SECRET manquant.');
+		return res.redirect('/');
 	}
 
 	const refreshToken = getCookieValue(req.headers.cookie, 'bat_refresh');
-	if (!refreshToken) return res.status(401).send('Accès refusé, jeton de rafraîchissement introuvable.');
+	if (!refreshToken) {
+		return res.redirect('/');
+	}
 
 	const storedToken = db.prepare('SELECT * FROM refresh_tokens WHERE token = ?').get(refreshToken);
 	if (!storedToken || new Date(storedToken.expires_at) < new Date()) {
-		return res.status(401).send('Jeton de rafraîchissement invalide ou expiré.');
+		return res.redirect('/');
 	}
 
 	const user = db.prepare('SELECT * FROM users WHERE id = ?').get(storedToken.user_id);
-	if (!user) return res.status(401).send('Utilisateur introuvable pour le jeton de rafraîchissement.');
+	if (!user) return res.redirect('/');
 
 	const newToken = jwt.sign({ id: user.id, username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1m' });
 
@@ -43,7 +45,7 @@ const checkJWT = async (req, res, next) => {
 		if (err.name === 'TokenExpiredError') {
 			return checkRefreshToken(req, res, next);
 		}
-		return res.status(401).send('Jeton invalide ou expiré.');
+		return res.redirect('/');
 	}
 };
 

@@ -72,16 +72,15 @@ router.post('/refresh', (req, res) => {
 		?.split(';')
 		.find((c) => c.trim().startsWith('bat_refresh='))
 		?.split('=')[1];
-	if (!refreshToken) return res.status(401).json({ erreur: 'Aucun jeton de rafraîchissement fourni.' });
-
+	if (!refreshToken) return res.redirect('/');
 	const storedToken = db.prepare('SELECT * FROM refresh_tokens WHERE token = ?').get(refreshToken);
 
 	if (!storedToken || new Date(storedToken.expires_at) < new Date()) {
-		return res.status(401).json({ erreur: 'Jeton de rafraîchissement invalide ou expiré.' });
+		return res.redirect('/');
 	}
 
 	const user = db.prepare('SELECT * FROM users WHERE id = ?').get(storedToken.user_id);
-	if (!user) return res.status(401).json({ erreur: 'Utilisateur non trouvé.' });
+	if (!user) return res.redirect('/');
 	const newToken = jwt.sign({ id: user.id, username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1m' });
 
 	res.cookie('bat_identity', newToken, { httpOnly: true, sameSite: 'strict', maxAge: 60 * 1000 });
