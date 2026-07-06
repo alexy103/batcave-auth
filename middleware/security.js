@@ -1,17 +1,26 @@
-const db = require('../config/db');
-const { writeConnexionAudit } = require('./logger');
+const jwt = require('jsonwebtoken');
 
-const checkAuth = async (req, res, next) => {
-	if (!req.session.user) return res.status(401).redirect('/');
-
-	const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
-
-	if (!user) {
-		return res.status(401).redirect('/');
+const checkJWT = async (req, res, next) => {
+	if (!process.env.JWT_SECRET) {
+		return res.status(500).send('Configuration serveur invalide: JWT_SECRET manquant.');
 	}
 
-	req.user = user;
-	next();
+	const cookieHeader = req.headers.cookie;
+	if (!cookieHeader) return res.status(401).send('Accès refusé, aucun jeton fourni.');
+
+	const tokenCookie = cookieHeader.split(';').find((c) => c.trim().startsWith('bat_identity='));
+	if (!tokenCookie) return res.status(401).send('Accès refusé, jeton introuvable.');
+
+	const token = tokenCookie.split('=')[1];
+
+	try {
+		const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+		req.user = decoded;
+		next();
+	} catch (err) {
+		return res.status(401).send('Jeton invalide ou expiré.');
+	}
 };
 
 const adminOnly = (req, res, next) => {
@@ -19,17 +28,4 @@ const adminOnly = (req, res, next) => {
 	next();
 };
 
-const checkSessionIntegrity = (req, res, next) => {
-	if (!req.session.user) return next();
-	if (req.session.ip !== req.ip || req.session.userAgent !== req.headers['user-agent']) {
-		writeConnexionAudit(req, req.session.user.username, 'FRAUD');
-		return req.session.destroy(() => {
-			res.clearCookie('bat_identity');
-			return res.status(401).redirect('/');
-		});
-	} else {
-		next();
-	}
-};
-
-module.exports = { checkAuth, adminOnly, checkSessionIntegrity };
+module.exports = { checkJWT, adminOnly };

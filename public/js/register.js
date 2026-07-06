@@ -45,8 +45,16 @@ document.getElementById('register-form').onsubmit = async (e) => {
 		});
 
 		if (response.status === 200) {
-			const data = await response.json();
-			window.location.href = data.user.role === 'ADMIN' ? '/bat-computer' : '/';
+			const meResponse = await fetch('/auth/me', {
+				method: 'GET',
+			});
+			if (!meResponse.ok) {
+				messageElement.style.color = 'red';
+				messageElement.innerText = 'Erreur lors de la récupération des informations utilisateur.';
+				return;
+			}
+			const me = await meResponse.json();
+			window.location.href = me.role === 'ADMIN' ? '/bat-computer' : '/';
 			return;
 		}
 
