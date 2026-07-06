@@ -51,7 +51,7 @@ router.post('/login', async (req, res, next) => {
 router.post('/logout', checkJWT, (req, res) => {
 	const refreshToken = req.headers.cookie
 		?.split(';')
-		.find((c) => c.startsWith('bat_refresh='))
+		.find((c) => c.trim().startsWith('bat_refresh='))
 		?.split('=')[1];
 
 	if (refreshToken) {
@@ -65,6 +65,27 @@ router.post('/logout', checkJWT, (req, res) => {
 
 router.get('/me', checkJWT, (req, res) => {
 	res.json({ id: req.user.id, username: req.user.username, role: req.user.role });
+});
+
+router.post('/refresh', (req, res) => {
+	const refreshToken = req.headers.cookie
+		?.split(';')
+		.find((c) => c.trim().startsWith('bat_refresh='))
+		?.split('=')[1];
+	if (!refreshToken) return res.status(401).json({ erreur: 'Aucun jeton de rafraîchissement fourni.' });
+
+	const storedToken = db.prepare('SELECT * FROM refresh_tokens WHERE token = ?').get(refreshToken);
+
+	if (!storedToken || new Date(storedToken.expires_at) < new Date()) {
+		return res.status(401).json({ erreur: 'Jeton de rafraîchissement invalide ou expiré.' });
+	}
+
+	const user = db.prepare('SELECT * FROM users WHERE id = ?').get(storedToken.user_id);
+	if (!user) return res.status(401).json({ erreur: 'Utilisateur non trouvé.' });
+	const newToken = jwt.sign({ id: user.id, username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1m' });
+
+	res.cookie('bat_identity', newToken, { httpOnly: true, sameSite: 'strict', maxAge: 60 * 1000 });
+	res.json({ message: 'Jeton rafraîchi !' });
 });
 
 module.exports = router;
