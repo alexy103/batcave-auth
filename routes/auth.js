@@ -8,6 +8,7 @@ const router = express.Router();
 
 const { checkJWT } = require('../middleware/security');
 const { writeConnexionAudit } = require('../middleware/logger');
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{12,}$/;
 
 router.post('/register', async (req, res) => {
 	const { username, password, role } = req.body;
@@ -85,6 +86,23 @@ router.post('/refresh', (req, res) => {
 
 	res.cookie('bat_identity', newToken, { httpOnly: true, sameSite: 'strict', maxAge: 60 * 1000 });
 	res.json({ message: 'Jeton rafraîchi !' });
+});
+
+router.post('/change-password', checkJWT, async (req, res) => {
+	const { oldPassword, newPassword } = req.body;
+	const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+
+	if (!PASSWORD_REGEX.test(newPassword)) {
+		return res.status(400).json({
+			erreur: 'Le mot de passe doit contenir au moins 12 caractères, 1 majuscule, 1 minuscule, 1 chiffre et 1 caractère spécial.',
+		});
+	}
+
+	if (!user || !(await bcrypt.compare(oldPassword, user.password_hash))) {
+		return res.status(401).json({ erreur: 'Mot de passe actuel incorrect' });
+	}
+	await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(await bcrypt.hash(newPassword, 10), req.user.id);
+	res.json({ message: 'Mot de passe changé avec succès' });
 });
 
 module.exports = router;

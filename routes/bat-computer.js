@@ -32,6 +32,10 @@ router.get('/logs', checkJWT, adminOnly, (req, res) => {
 	res.sendFile(path.resolve(__dirname, '../views/bat-logs.html'));
 });
 
+router.get('/change-password', checkJWT, adminOnly, (req, res) => {
+	res.sendFile(path.resolve(__dirname, '../views/change-password.html'));
+});
+
 router.get('/api/logs', checkJWT, adminOnly, (req, res) => {
 	const logs = db.prepare('SELECT * FROM connexions_audit ORDER BY timestamp DESC').all();
 	res.json(logs);
