@@ -1,10 +1,13 @@
 require('dotenv').config();
 const express = require('express');
+const helmet = require('helmet');
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+app.use(helmet());
 
 const authRouter = require('./routes/auth');
 app.use('/auth', authRouter);
