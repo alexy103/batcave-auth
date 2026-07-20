@@ -2,6 +2,9 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const { authenticator } = require('@otplib/preset-v11');
+const QRCode = require('qrcode');
+const path = require('path');
 
 const db = require('../config/db');
 const router = express.Router();
@@ -103,6 +106,24 @@ router.post('/change-password', checkJWT, async (req, res) => {
 	}
 	await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(await bcrypt.hash(newPassword, 10), req.user.id);
 	res.json({ message: 'Mot de passe changé avec succès' });
+});
+
+router.post('/setup-2fa', checkJWT, async (req, res) => {
+	try {
+		const secret = authenticator.generateSecret();
+		const appName = 'Batcave';
+		const accountName = req.user?.username || `user-${req.user?.id}`;
+		const otpAuthUri = authenticator.keyuri(accountName, appName, secret);
+		db.prepare('UPDATE users SET two_factor_secret = ?, two_factor_enabled = 0 WHERE id = ?').run(secret, req.user.id);
+		const qrCodeBase64 = await QRCode.toDataURL(otpAuthUri);
+		res.json({ message: '2FA configuré avec succès', secret, qrCodeBase64 });
+	} catch (err) {
+		res.status(500).json({ erreur: 'Erreur lors de la configuration 2FA.' });
+	}
+});
+
+router.get('/setup-2fa-test', checkJWT, (req, res) => {
+	res.sendFile(path.resolve(__dirname, '../views/setup-2fa-test.html'));
 });
 
 module.exports = router;

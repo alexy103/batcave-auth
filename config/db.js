@@ -11,7 +11,9 @@ db.prepare(
     username TEXT UNIQUE,
     password_hash TEXT,
     role TEXT DEFAULT 'user',
-    passwords_retry INTEGER
+    passwords_retry INTEGER,
+    two_factor_secret TEXT NULL,
+    two_factor_enabled INTEGER DEFAULT 0
   )
 `,
 ).run();
