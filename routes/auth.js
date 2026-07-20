@@ -126,4 +126,37 @@ router.get('/setup-2fa-test', checkJWT, (req, res) => {
 	res.sendFile(path.resolve(__dirname, '../views/setup-2fa-test.html'));
 });
 
+router.post('/verify-2fa', checkJWT, async (req, res) => {
+	const { username, code } = req.body;
+
+	if (!username || !code) {
+		return res.status(400).json({ erreur: 'username et code sont requis.' });
+	}
+
+	if (!/^\d{6}$/.test(code)) {
+		return res.status(400).json({ erreur: 'Le code 2FA doit contenir 6 chiffres.' });
+	}
+
+	const user = db.prepare('SELECT id, username, two_factor_secret, two_factor_enabled FROM users WHERE username = ?').get(username);
+
+	if (!user) {
+		return res.status(404).json({ erreur: 'Utilisateur introuvable.' });
+	}
+
+	if (!user.two_factor_secret) {
+		return res.status(400).json({ erreur: 'Aucun secret 2FA en attente pour cet utilisateur.' });
+	}
+
+	const pendingSecret = user.two_factor_secret;
+	const isValidCode = authenticator.check(code, pendingSecret);
+
+	if (!isValidCode) {
+		return res.status(401).json({ erreur: 'Code 2FA invalide ou expiré.' });
+	}
+
+	db.prepare('UPDATE users SET two_factor_enabled = 1 WHERE id = ?').run(user.id);
+
+	return res.json({ message: '2FA activé avec succès.' });
+});
+
 module.exports = router;
