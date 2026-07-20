@@ -9,8 +9,6 @@ document.getElementById('register-form').onsubmit = async (e) => {
 	const messageElement = document.getElementById('message');
 	const setupPanel = document.getElementById('setup-2fa-panel');
 	const setupQr = document.getElementById('setup-2fa-qr');
-	const setupSecret = document.getElementById('setup-2fa-secret');
-	const setupResponse = document.getElementById('setup-2fa-response');
 
 	if (!messageElement) return;
 	messageElement.classList.remove('hidden');
@@ -33,28 +31,18 @@ document.getElementById('register-form').onsubmit = async (e) => {
 		try {
 			setupData = await setupResponseData.json();
 		} catch {
-			setupData = { erreur: 'Reponse non JSON', status: setupResponseData.status };
+			setupData = { erreur: 'Réponse non JSON', status: setupResponseData.status };
 		}
 
-		if (!setupResponseData.ok || !setupData?.qrCodeBase64 || !setupData?.secret) {
+		if (!setupResponseData.ok || !setupData?.qrCodeBase64) {
 			messageElement.style.color = 'red';
-			messageElement.innerText = setupData?.erreur || 'Impossible de generer le QR code 2FA.';
-			if (setupResponse) {
-				setupResponse.classList.remove('hidden');
-				setupResponse.textContent = JSON.stringify(setupData, null, 2);
-			}
+			messageElement.innerText = setupData?.erreur || 'Impossible de générer le QR code 2FA.';
 			return false;
 		}
 
-		if (setupPanel && setupQr && setupSecret) {
+		if (setupPanel && setupQr) {
 			setupPanel.classList.remove('hidden');
 			setupQr.src = setupData.qrCodeBase64;
-			setupSecret.textContent = setupData.secret;
-		}
-
-		if (setupResponse) {
-			setupResponse.classList.remove('hidden');
-			setupResponse.textContent = JSON.stringify(setupData, null, 2);
 		}
 
 		messageElement.style.color = 'green';
