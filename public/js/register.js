@@ -45,8 +45,7 @@ document.getElementById('register-form').onsubmit = async (e) => {
 			setupQr.src = setupData.qrCodeBase64;
 		}
 
-		messageElement.style.color = 'green';
-		messageElement.innerText = 'QR code regénéré. Scanne-le puis reconnecte-toi pour entrer le code.';
+		messageElement.innerText = '';
 		return true;
 	};
 
