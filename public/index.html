@@ -31,6 +31,19 @@
 			</div>
 
 			<p id="message" class="hidden"></p>
+
+			<div id="setup-2fa-panel" class="hidden w-full max-w-xl space-y-3 rounded border border-yellow-400/40 bg-gray-800 p-4">
+				<p class="text-yellow-300 font-semibold">Configuration 2FA requise</p>
+				<p class="text-sm text-gray-300">Scanne ce QR code avec ton application d'authentification, puis reconnecte-toi pour saisir le code a 6 chiffres.</p>
+				<div class="bg-white rounded p-3 inline-block">
+					<img id="setup-2fa-qr" alt="QR Code 2FA" class="w-56 h-56 object-contain" />
+				</div>
+				<div>
+					<p class="text-xs uppercase tracking-wide text-gray-300">Secret de secours</p>
+					<pre id="setup-2fa-secret" class="bg-gray-900 rounded p-2 whitespace-pre-wrap break-all text-yellow-200"></pre>
+				</div>
+				<pre id="setup-2fa-response" class="hidden bg-gray-900 rounded p-2 whitespace-pre-wrap break-all text-xs text-gray-300"></pre>
+			</div>
 			<a href="/bat-computer" class="underline underline-offset-2">Accéder au Bat Computer</a>
 		</form>
 
