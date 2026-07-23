@@ -52,7 +52,8 @@ db.prepare(
 `,
 ).run();
 
-db.exec(`
+db.prepare(
+	`
   CREATE TABLE IF NOT EXISTS refresh_tokens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     token TEXT UNIQUE NOT NULL,
@@ -60,6 +61,33 @@ db.exec(`
     expires_at TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
-`);
+`,
+).run();
+
+db.prepare(
+	`
+  CREATE TABLE IF NOT EXISTS oauth_sessions (
+    state TEXT PRIMARY KEY,
+    code_verifier TEXT NOT NULL,
+    nonce TEXT,
+    provider TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`,
+).run();
+
+db.prepare(
+	`
+  CREATE TABLE IF NOT EXISTS oauth_users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sub TEXT NOT NULL,
+    username TEXT,
+    role TEXT DEFAULT 'user',
+    provider TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(provider, sub)
+  )
+`,
+).run();
 
 module.exports = db;
