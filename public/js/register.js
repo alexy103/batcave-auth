@@ -1,4 +1,22 @@
 const authStatusElement = document.getElementById('auth-status');
+const localAuthActionsElement = document.getElementById('local-auth-actions');
+const oauthAuthActionsElement = document.getElementById('oauth-auth-actions');
+const logoutButtonElement = document.getElementById('logout-button');
+
+function setConnectedMode(isConnected) {
+	if (!localAuthActionsElement || !oauthAuthActionsElement || !logoutButtonElement) return;
+
+	if (isConnected) {
+		localAuthActionsElement.classList.add('hidden');
+		oauthAuthActionsElement.classList.add('hidden');
+		logoutButtonElement.classList.remove('hidden');
+		return;
+	}
+
+	localAuthActionsElement.classList.remove('hidden');
+	oauthAuthActionsElement.classList.remove('hidden');
+	logoutButtonElement.classList.add('hidden');
+}
 
 async function showCurrentSessionStatus() {
 	if (!authStatusElement) return;
@@ -10,18 +28,31 @@ async function showCurrentSessionStatus() {
 		});
 
 		if (!meResponse.ok) {
+			setConnectedMode(false);
 			return;
 		}
 
 		const me = await meResponse.json();
 		authStatusElement.classList.remove('hidden');
 		authStatusElement.innerText = `Connecté en tant que ${me.username} (${me.role})`;
+		setConnectedMode(true);
 	} catch {
+		setConnectedMode(false);
 		// Ignore silently when no active session is present.
 	}
 }
 
 showCurrentSessionStatus();
+
+if (logoutButtonElement) {
+	logoutButtonElement.addEventListener('click', async () => {
+		await fetch('/auth/logout', {
+			method: 'POST',
+			credentials: 'include',
+		});
+		window.location.reload();
+	});
+}
 
 document.getElementById('register-form').onsubmit = async (e) => {
 	e.preventDefault();

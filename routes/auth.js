@@ -33,6 +33,8 @@ router.post('/register', async (req, res) => {
 
 router.get('/login/google', authController.redirectToGoogle);
 router.get('/callback/google', authController.handleGoogleCallback);
+router.get('/login/github', authController.redirectToGithub);
+router.get('/callback/github', authController.handleGithubCallback);
 
 router.post('/login', async (req, res, next) => {
 	const { username, password } = req.body;

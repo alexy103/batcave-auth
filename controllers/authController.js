@@ -6,101 +6,131 @@ const oauthService = require('../services/oauthService');
 const userModel = require('../models/userModel');
 const db = require('../config/db');
 
-async function redirectToGoogle(req, res) {
+const OAUTH_PROVIDER_CONFIG = {
+	google: {
+		requiresNonce: true,
+		buildAuthUrl: ({ state, codeChallenge, nonce }) => oauthService.getGoogleAuthUrl(state, codeChallenge, nonce),
+		exchangeTokens: ({ code, codeVerifier }) => oauthService.exchangeGoogleCodeForTokens(code, codeVerifier),
+		resolveProfile: ({ tokens, session }) => oauthService.verifyGoogleIdToken(tokens.id_token, session.nonce),
+	},
+	github: {
+		requiresNonce: false,
+		buildAuthUrl: ({ state, codeChallenge }) => oauthService.getGithubAuthUrl(state, codeChallenge),
+		exchangeTokens: ({ code, codeVerifier }) => oauthService.exchangeGithubCodeForTokens(code, codeVerifier),
+		resolveProfile: ({ tokens }) => oauthService.fetchGithubUserProfile(tokens.access_token),
+	},
+};
+
+function redirectOAuthError(res, provider, error, description) {
+	const params = new URLSearchParams({
+		provider: String(provider || 'unknown'),
+		error: String(error || 'oauth_error'),
+		description: String(description || ''),
+	});
+	return res.redirect(`/oauth-error.html?${params.toString()}`);
+}
+
+function issueAppSessionFromOAuth(req, res, profile, role = 'USER') {
+	userModel.upsertUser(profile);
+	const oauthUser = userModel.getOAuthUserByProviderSub(profile.provider, profile.sub);
+	if (!oauthUser) {
+		throw new Error('OAuth user persistence failed.');
+	}
+
+	const appUser = userModel.findOrCreateAppUserForOAuth(profile.provider, profile.sub, profile.name, role || oauthUser.role);
+
+	req.session.userId = profile.sub;
+	req.session.userName = profile.name;
+
+	const token = jwt.sign({ id: appUser.id, username: appUser.username, role: appUser.role }, process.env.JWT_SECRET, { expiresIn: '1m' });
+	const refreshToken = crypto.randomBytes(40).toString('hex');
+	const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+	db.prepare('INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES (?, ?, ?)').run(refreshToken, appUser.id, expiresAt);
+
+	res.cookie('bat_identity', token, { httpOnly: true, sameSite: 'strict', maxAge: 60 * 1000 });
+	res.cookie('bat_refresh', refreshToken, { httpOnly: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
+
+	if (String(appUser.role).toUpperCase() === 'ADMIN') {
+		return res.redirect('/bat-computer');
+	}
+	return res.redirect('/');
+}
+
+function normalizeOAuthProfile(rawProfile, fallbackProvider) {
+	return {
+		sub: rawProfile.sub,
+		name: rawProfile.name || rawProfile.email || `user-${rawProfile.sub}`,
+		provider: rawProfile.provider || fallbackProvider,
+	};
+}
+
+async function startOAuthLogin(res, provider) {
+	const providerConfig = OAUTH_PROVIDER_CONFIG[provider];
 	const state = cryptoService.generateState();
 	const codeVerifier = cryptoService.generateCodeVerifier();
 	const codeChallenge = cryptoService.generateCodeChallenge(codeVerifier);
-	const nonce = cryptoService.generateState();
+	const nonce = providerConfig.requiresNonce ? cryptoService.generateState() : null;
 
-	// Persistance temporaire de la session PKCE
-	userModel.saveOAuthSession(state, codeVerifier, nonce, 'google');
+	userModel.saveOAuthSession(state, codeVerifier, nonce, provider);
 
-	// Construction de l'URL via le service dédié
-	const authUrl = oauthService.getGoogleAuthUrl(state, codeChallenge, nonce);
-
-	res.redirect(authUrl);
+	const authUrl = providerConfig.buildAuthUrl({ state, codeChallenge, nonce });
+	return res.redirect(authUrl);
 }
 
-async function handleGoogleCallback(req, res) {
+async function completeOAuthCallback(req, res, provider) {
+	const providerConfig = OAUTH_PROVIDER_CONFIG[provider];
 	const { code, state, error, error_description: errorDescription } = req.query;
+
 	if (error) {
-		const params = new URLSearchParams({
-			provider: 'google',
-			error: String(error),
-			description: String(errorDescription || ''),
-		});
-		return res.redirect(`/oauth-error.html?${params.toString()}`);
+		return redirectOAuthError(res, provider, error, errorDescription);
 	}
 
 	if (!code || !state) {
-		const params = new URLSearchParams({
-			provider: 'google',
-			error: 'invalid_callback',
-			description: 'Missing code or state.',
-		});
-		return res.redirect(`/oauth-error.html?${params.toString()}`);
+		return redirectOAuthError(res, provider, 'invalid_callback', 'Missing code or state.');
 	}
 
 	const session = userModel.getOAuthSession(state);
-	if (!session) {
-		const params = new URLSearchParams({
-			provider: 'google',
-			error: 'invalid_state',
-			description: 'Invalid state token. Access denied.',
-		});
-		return res.redirect(`/oauth-error.html?${params.toString()}`);
+	if (!session || session.provider !== provider) {
+		return redirectOAuthError(res, provider, 'invalid_state', 'Invalid state token. Access denied.');
 	}
 	userModel.deleteOAuthSession(state);
 
 	try {
-		const tokens = await oauthService.exchangeCodeForTokens(code, session.code_verifier);
+		const tokens = await providerConfig.exchangeTokens({ code, codeVerifier: session.code_verifier });
+		const rawProfile = await providerConfig.resolveProfile({ tokens, session });
 
-		const userProfile = await oauthService.verifyGoogleIdToken(tokens.id_token, session.nonce);
-		if (!userProfile?.sub) {
-			return res.status(401).send('Invalid ID token payload.');
+		if (!rawProfile?.sub) {
+			return redirectOAuthError(res, provider, 'invalid_profile', 'Provider profile is missing subject identifier.');
 		}
 
-		const normalizedProfile = {
-			sub: userProfile.sub,
-			name: userProfile.name || userProfile.email || `user-${userProfile.sub}`,
-			provider: session.provider || 'google',
-		};
-		userModel.upsertUser(normalizedProfile);
-		const oauthUser = userModel.getOAuthUserByProviderSub(normalizedProfile.provider, normalizedProfile.sub);
-		if (!oauthUser) {
-			return res.status(500).send('OAuth user persistence failed.');
-		}
-
-		const appUser = userModel.findOrCreateAppUserForOAuth(normalizedProfile.provider, normalizedProfile.sub, normalizedProfile.name, oauthUser.role);
-
-		req.session.userId = normalizedProfile.sub; // On stocke l'ID unique du provider
-		req.session.userName = normalizedProfile.name;
-
-		const token = jwt.sign({ id: appUser.id, username: appUser.username, role: appUser.role }, process.env.JWT_SECRET, { expiresIn: '1m' });
-		const refreshToken = crypto.randomBytes(40).toString('hex');
-		const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-		db.prepare('INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES (?, ?, ?)').run(refreshToken, appUser.id, expiresAt);
-
-		res.cookie('bat_identity', token, { httpOnly: true, sameSite: 'strict', maxAge: 60 * 1000 });
-		res.cookie('bat_refresh', refreshToken, { httpOnly: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
-
-		if (String(appUser.role).toUpperCase() === 'ADMIN') {
-			return res.redirect('/bat-computer');
-		}
-		return res.redirect('/');
-	} catch (error) {
-		console.error(error);
-		const params = new URLSearchParams({
-			provider: 'google',
-			error: 'oauth_flow_failed',
-			description: 'Authentication workflow failed.',
-		});
-		res.redirect(`/oauth-error.html?${params.toString()}`);
+		const normalizedProfile = normalizeOAuthProfile(rawProfile, provider);
+		return issueAppSessionFromOAuth(req, res, normalizedProfile, 'USER');
+	} catch (callbackError) {
+		console.error(callbackError);
+		return redirectOAuthError(res, provider, 'oauth_flow_failed', 'Authentication workflow failed.');
 	}
+}
+
+async function redirectToGoogle(req, res) {
+	return startOAuthLogin(res, 'google');
+}
+
+async function redirectToGithub(req, res) {
+	return startOAuthLogin(res, 'github');
+}
+
+async function handleGoogleCallback(req, res) {
+	return completeOAuthCallback(req, res, 'google');
+}
+
+async function handleGithubCallback(req, res) {
+	return completeOAuthCallback(req, res, 'github');
 }
 
 module.exports = {
 	redirectToGoogle,
 	handleGoogleCallback,
+	redirectToGithub,
+	handleGithubCallback,
 };

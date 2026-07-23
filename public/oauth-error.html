@@ -17,15 +17,22 @@
 			</div>
 			<div class="flex gap-3">
 				<a href="/" class="rounded bg-yellow-400 px-4 py-2 font-semibold text-gray-900">Retour à la connexion</a>
-				<a href="/auth/login/google" class="rounded bg-white px-4 py-2 font-semibold text-gray-900">Réessayer Google</a>
+				<a id="retry-link" href="/auth/login/google" class="rounded bg-white px-4 py-2 font-semibold text-gray-900">Réessayer Google</a>
 			</div>
 		</main>
 
 		<script>
 			const params = new URLSearchParams(window.location.search);
-			document.getElementById('provider').textContent = params.get('provider') || 'inconnu';
+			const provider = params.get('provider') || 'inconnu';
+			document.getElementById('provider').textContent = provider;
 			document.getElementById('error').textContent = params.get('error') || 'inconnu';
 			document.getElementById('description').textContent = params.get('description') || 'Aucun détail fourni.';
+
+			const retryLink = document.getElementById('retry-link');
+			if (provider === 'github') {
+				retryLink.href = '/auth/login/github';
+				retryLink.textContent = 'Réessayer GitHub';
+			}
 		</script>
 	</body>
 </html>

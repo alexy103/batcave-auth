@@ -26,15 +26,24 @@
 				<option value="ADMIN">Admin</option>
 			</select>
 
-			<div class="flex items-center gap-4">
+			<div id="local-auth-actions" class="flex items-center gap-4">
 				<button type="submit" name="action" value="login" class="cursor-pointer bg-yellow-400 text-gray-900 px-2 py-1 rounded">Connexion</button>
 				<button type="submit" name="action" value="register" class="cursor-pointer bg-gray-400 text-gray-900 px-2 py-1 rounded">S'inscrire</button>
 			</div>
 
-			<a href="/auth/login/google" class="inline-flex items-center gap-2 rounded bg-white px-4 py-2 font-semibold text-gray-900 hover:bg-gray-100">
-				<span class="text-red-600">G</span>
-				<span>Se connecter avec Google</span>
-			</a>
+			<div id="oauth-auth-actions" class="flex flex-col items-center gap-3">
+				<a href="/auth/login/google" class="inline-flex items-center gap-2 rounded bg-white px-4 py-2 font-semibold text-gray-900 hover:bg-gray-100">
+					<span class="text-red-600">G</span>
+					<span>Se connecter avec Google</span>
+				</a>
+
+				<a href="/auth/login/github" class="inline-flex items-center gap-2 rounded bg-gray-200 px-4 py-2 font-semibold text-gray-900 hover:bg-gray-300">
+					<span>GH</span>
+					<span>Se connecter avec GitHub</span>
+				</a>
+			</div>
+
+			<button id="logout-button" type="button" class="hidden cursor-pointer rounded bg-yellow-400 px-4 py-2 font-semibold text-gray-900">Déconnexion</button>
 
 			<p id="message" class="hidden"></p>
 
