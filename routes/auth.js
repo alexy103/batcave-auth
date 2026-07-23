@@ -10,6 +10,8 @@ const router = express.Router();
 
 const { checkJWT } = require('../middleware/security');
 const { writeConnexionAudit } = require('../middleware/logger');
+const authController = require('../controllers/authController');
+
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{12,}$/;
 
 // Accept current, previous, and next 30s TOTP windows to reduce false negatives.
@@ -28,6 +30,9 @@ router.post('/register', async (req, res) => {
 		res.status(409).send("Erreur : l'utilisateur existe déjà.");
 	}
 });
+
+router.get('/login/google', authController.redirectToGoogle);
+router.get('/callback/google', authController.handleGoogleCallback);
 
 router.post('/login', async (req, res, next) => {
 	const { username, password } = req.body;
@@ -85,7 +90,19 @@ router.post('/logout', checkJWT, (req, res) => {
 });
 
 router.get('/me', checkJWT, (req, res) => {
-	res.json({ id: req.user.id, username: req.user.username, role: req.user.role });
+	let displayUsername = req.user.username;
+	const oauthMappedMatch = /^([^_]+)_(.+)$/.exec(req.user.username || '');
+
+	if (oauthMappedMatch) {
+		const provider = oauthMappedMatch[1];
+		const sub = oauthMappedMatch[2];
+		const oauthUser = db.prepare('SELECT username FROM oauth_users WHERE provider = ? AND sub = ?').get(provider, sub);
+		if (oauthUser?.username) {
+			displayUsername = oauthUser.username;
+		}
+	}
+
+	res.json({ id: req.user.id, username: displayUsername, role: req.user.role });
 });
 
 router.post('/refresh', (req, res) => {

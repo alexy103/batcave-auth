@@ -1,3 +1,28 @@
+const authStatusElement = document.getElementById('auth-status');
+
+async function showCurrentSessionStatus() {
+	if (!authStatusElement) return;
+
+	try {
+		const meResponse = await fetch('/auth/me', {
+			method: 'GET',
+			credentials: 'include',
+		});
+
+		if (!meResponse.ok) {
+			return;
+		}
+
+		const me = await meResponse.json();
+		authStatusElement.classList.remove('hidden');
+		authStatusElement.innerText = `Connecté en tant que ${me.username} (${me.role})`;
+	} catch {
+		// Ignore silently when no active session is present.
+	}
+}
+
+showCurrentSessionStatus();
+
 document.getElementById('register-form').onsubmit = async (e) => {
 	e.preventDefault();
 

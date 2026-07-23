@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Erreur OAuth - Batcave Security</title>
+		<link rel="stylesheet" href="/css/output.css" />
+	</head>
+	<body class="min-h-screen bg-gray-900 text-white flex items-center justify-center p-6">
+		<main class="w-full max-w-xl rounded-xl border border-red-400/40 bg-gray-800 p-6 space-y-4">
+			<h1 class="text-2xl font-bold text-red-300">Connexion OAuth interrompue</h1>
+			<p class="text-gray-200">La connexion avec le fournisseur d'identité n'a pas pu aboutir.</p>
+			<div class="rounded bg-gray-900 p-4 space-y-2">
+				<p><span class="font-semibold text-gray-300">Fournisseur:</span> <span id="provider" class="text-white">inconnu</span></p>
+				<p><span class="font-semibold text-gray-300">Code erreur:</span> <span id="error" class="text-white">inconnu</span></p>
+				<p><span class="font-semibold text-gray-300">Détail:</span> <span id="description" class="text-white">Aucun détail fourni.</span></p>
+			</div>
+			<div class="flex gap-3">
+				<a href="/" class="rounded bg-yellow-400 px-4 py-2 font-semibold text-gray-900">Retour à la connexion</a>
+				<a href="/auth/login/google" class="rounded bg-white px-4 py-2 font-semibold text-gray-900">Réessayer Google</a>
+			</div>
+		</main>
+
+		<script>
+			const params = new URLSearchParams(window.location.search);
+			document.getElementById('provider').textContent = params.get('provider') || 'inconnu';
+			document.getElementById('error').textContent = params.get('error') || 'inconnu';
+			document.getElementById('description').textContent = params.get('description') || 'Aucun détail fourni.';
+		</script>
+	</body>
+</html>

@@ -8,6 +8,7 @@
 	</head>
 	<body class="p-8 space-y-8 bg-gray-900 text-white">
 		<h1 class="text-4xl">Connexion</h1>
+		<p id="auth-status" class="hidden rounded border border-green-400/40 bg-green-900/30 px-3 py-2 text-green-200"></p>
 
 		<form id="register-form" method="POST" action="/auth/login" class="flex flex-col gap-8 items-center">
 			<div class="flex flex-col gap-2">
@@ -30,11 +31,16 @@
 				<button type="submit" name="action" value="register" class="cursor-pointer bg-gray-400 text-gray-900 px-2 py-1 rounded">S'inscrire</button>
 			</div>
 
+			<a href="/auth/login/google" class="inline-flex items-center gap-2 rounded bg-white px-4 py-2 font-semibold text-gray-900 hover:bg-gray-100">
+				<span class="text-red-600">G</span>
+				<span>Se connecter avec Google</span>
+			</a>
+
 			<p id="message" class="hidden"></p>
 
 			<div id="setup-2fa-panel" class="hidden w-full max-w-xl space-y-3 rounded border border-yellow-400/40 bg-gray-800 p-4">
 				<p class="text-yellow-300 font-semibold">Configuration 2FA requise</p>
-				<p class="text-sm text-gray-300">Scanne ce QR code avec ton application d'authentification, puis reconnecte-toi pour saisir le code a 6 chiffres.</p>
+				<p class="text-sm text-gray-300">Scanne ce QR code avec ton application d'authentification, puis reconnecte-toi pour saisir le code à 6 chiffres.</p>
 				<div class="bg-white rounded p-1 mx-auto w-fit">
 					<img id="setup-2fa-qr" alt="QR Code 2FA" class="w-56 h-56 object-contain mx-auto" />
 				</div>
