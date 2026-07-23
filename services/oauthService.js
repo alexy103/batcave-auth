@@ -5,6 +5,9 @@ const DEFAULT_GITHUB_AUTH_ENDPOINT = 'https://github.com/login/oauth/authorize';
 const DEFAULT_GITHUB_TOKEN_ENDPOINT = 'https://github.com/login/oauth/access_token';
 const DEFAULT_GITHUB_USERINFO_ENDPOINT = 'https://api.github.com/user';
 const DEFAULT_GITHUB_EMAILS_ENDPOINT = 'https://api.github.com/user/emails';
+const DEFAULT_FACEBOOK_AUTH_ENDPOINT = 'https://www.facebook.com/v20.0/dialog/oauth';
+const DEFAULT_FACEBOOK_TOKEN_ENDPOINT = 'https://graph.facebook.com/v20.0/oauth/access_token';
+const DEFAULT_FACEBOOK_USERINFO_ENDPOINT = 'https://graph.facebook.com/me';
 
 function toAbsoluteUrl(value, varName) {
 	try {
@@ -35,6 +38,10 @@ function getGoogleRedirectUri() {
 
 function getGithubRedirectUri() {
 	return toAbsoluteUrl(getRequiredAnyEnv(['GITHUB_REDIRECT_URI']), 'GITHUB_REDIRECT_URI');
+}
+
+function getFacebookRedirectUri() {
+	return toAbsoluteUrl(getRequiredAnyEnv(['FACEBOOK_REDIRECT_URI', 'META_REDIRECT_URI']), 'FACEBOOK_REDIRECT_URI/META_REDIRECT_URI');
 }
 
 function getGoogleAuthUrl(state, codeChallenge, nonce) {
@@ -165,6 +172,88 @@ async function fetchGithubUserProfile(accessToken) {
 	};
 }
 
+function getFacebookAuthUrl(state, codeChallenge) {
+	const endpoint = toAbsoluteUrl(process.env.FACEBOOK_AUTH_ENDPOINT || process.env.META_AUTH_ENDPOINT || DEFAULT_FACEBOOK_AUTH_ENDPOINT, 'FACEBOOK_AUTH_ENDPOINT/META_AUTH_ENDPOINT');
+	const redirectUri = getFacebookRedirectUri();
+	const clientId = getRequiredAnyEnv(['FACEBOOK_CLIENT_ID', 'META_CLIENT_ID']);
+	const scope = process.env.FACEBOOK_SCOPE || process.env.META_SCOPE || 'public_profile';
+
+	const url = new URL(endpoint);
+	url.searchParams.append('client_id', clientId);
+	url.searchParams.append('redirect_uri', redirectUri);
+	url.searchParams.append('response_type', 'code');
+	url.searchParams.append('scope', scope);
+	url.searchParams.append('state', state);
+	url.searchParams.append('code_challenge', codeChallenge);
+	url.searchParams.append('code_challenge_method', 'S256');
+	return url.toString();
+}
+
+async function exchangeFacebookCodeForTokens(code, codeVerifier) {
+	const tokenEndpoint = toAbsoluteUrl(process.env.FACEBOOK_TOKEN_ENDPOINT || process.env.META_TOKEN_ENDPOINT || DEFAULT_FACEBOOK_TOKEN_ENDPOINT, 'FACEBOOK_TOKEN_ENDPOINT/META_TOKEN_ENDPOINT');
+	const redirectUri = getFacebookRedirectUri();
+
+	const response = await fetch(tokenEndpoint, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/x-www-form-urlencoded',
+			Accept: 'application/json',
+		},
+		body: new URLSearchParams({
+			client_id: getRequiredAnyEnv(['FACEBOOK_CLIENT_ID', 'META_CLIENT_ID']),
+			client_secret: getRequiredAnyEnv(['FACEBOOK_CLIENT_SECRET', 'META_CLIENT_SECRET']),
+			code,
+			redirect_uri: redirectUri,
+			code_verifier: codeVerifier,
+		}),
+	});
+
+	if (!response.ok) {
+		const errorData = await response.text();
+		throw new Error(errorData || 'Facebook token exchange failed');
+	}
+
+	const tokens = await response.json();
+	if (!tokens.access_token) {
+		throw new Error('Missing access_token from Facebook token response');
+	}
+
+	return tokens;
+}
+
+async function fetchFacebookUserProfile(accessToken) {
+	const userEndpoint = toAbsoluteUrl(
+		process.env.FACEBOOK_USERINFO_ENDPOINT || process.env.META_USERINFO_ENDPOINT || DEFAULT_FACEBOOK_USERINFO_ENDPOINT,
+		'FACEBOOK_USERINFO_ENDPOINT/META_USERINFO_ENDPOINT',
+	);
+	const url = new URL(userEndpoint);
+	url.searchParams.append('fields', 'id,name,email');
+
+	const response = await fetch(url.toString(), {
+		method: 'GET',
+		headers: {
+			Authorization: `Bearer ${accessToken}`,
+			Accept: 'application/json',
+		},
+	});
+
+	if (!response.ok) {
+		throw new Error('Unable to fetch Facebook user profile');
+	}
+
+	const user = await response.json();
+	if (!user?.id) {
+		throw new Error('Invalid Facebook profile payload');
+	}
+
+	return {
+		sub: String(user.id),
+		name: user.name || user.email || `user-${user.id}`,
+		email: user.email || null,
+		provider: 'facebook',
+	};
+}
+
 function decodeIdToken(idToken) {
 	const payloadBase64 = idToken.split('.')[1];
 	return JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
@@ -207,6 +296,9 @@ module.exports = {
 	getGithubAuthUrl,
 	exchangeGithubCodeForTokens,
 	fetchGithubUserProfile,
+	getFacebookAuthUrl,
+	exchangeFacebookCodeForTokens,
+	fetchFacebookUserProfile,
 	decodeIdToken,
 	verifyGoogleIdToken,
 };

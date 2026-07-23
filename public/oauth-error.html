@@ -32,6 +32,9 @@
 			if (provider === 'github') {
 				retryLink.href = '/auth/login/github';
 				retryLink.textContent = 'Réessayer GitHub';
+			} else if (provider === 'facebook') {
+				retryLink.href = '/auth/login/facebook';
+				retryLink.textContent = 'Réessayer Meta';
 			}
 		</script>
 	</body>

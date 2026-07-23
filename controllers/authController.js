@@ -19,6 +19,12 @@ const OAUTH_PROVIDER_CONFIG = {
 		exchangeTokens: ({ code, codeVerifier }) => oauthService.exchangeGithubCodeForTokens(code, codeVerifier),
 		resolveProfile: ({ tokens }) => oauthService.fetchGithubUserProfile(tokens.access_token),
 	},
+	facebook: {
+		requiresNonce: false,
+		buildAuthUrl: ({ state, codeChallenge }) => oauthService.getFacebookAuthUrl(state, codeChallenge),
+		exchangeTokens: ({ code, codeVerifier }) => oauthService.exchangeFacebookCodeForTokens(code, codeVerifier),
+		resolveProfile: ({ tokens }) => oauthService.fetchFacebookUserProfile(tokens.access_token),
+	},
 };
 
 function redirectOAuthError(res, provider, error, description) {
@@ -120,6 +126,10 @@ async function redirectToGithub(req, res) {
 	return startOAuthLogin(res, 'github');
 }
 
+async function redirectToFacebook(req, res) {
+	return startOAuthLogin(res, 'facebook');
+}
+
 async function handleGoogleCallback(req, res) {
 	return completeOAuthCallback(req, res, 'google');
 }
@@ -128,9 +138,15 @@ async function handleGithubCallback(req, res) {
 	return completeOAuthCallback(req, res, 'github');
 }
 
+async function handleFacebookCallback(req, res) {
+	return completeOAuthCallback(req, res, 'facebook');
+}
+
 module.exports = {
 	redirectToGoogle,
 	handleGoogleCallback,
 	redirectToGithub,
 	handleGithubCallback,
+	redirectToFacebook,
+	handleFacebookCallback,
 };
